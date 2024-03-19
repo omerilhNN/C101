@@ -18,6 +18,8 @@ int main() {
 	fgets(input, sizeof(input), stdin);
 	input[strcspn(input, "\n")] = '\0';
 	inputLen = strlen(input);
+
+	input = (char*)realloc(input, inputLen * sizeof(char));
 	
 
 	if (fopen_s(&file, filename, "r") != 0) {
@@ -31,18 +33,23 @@ int main() {
 	char* buffer = (char*)malloc(sizeof(char) * (length + 2)); //sentenceCtr -> buffer[i+2]kontrolü için +3
 	if (buffer == NULL) {
 		printf("Memory allocation failed\n");
-		exit(1);
+		return -1;
 	}
-	fread(buffer, sizeof(char), length, file);
-	buffer[length-1] = '\0';
+	fread(buffer, sizeof(char), length+2, file);
+	buffer[length] = '\0';
 
-	for (int i =0; i< length; i++) {
+	for (int i =0; i< length + 1 ; i++) {
 
 		if (buffer[i] == ' ' || buffer[i] == '\0') {
 			wordCtr++;
 		}
-		if (ispunct(buffer[i]) && buffer[i] != '.')
+		if (ispunct(buffer[i])) {
+			if (buffer[i] == '.' && (isupper(buffer[i + 2]) || buffer[i + 1] == '\0')) {
+				sentenceCtr++;
+			}
 			punctCtr++;
+		}
+			
 
 		if (buffer[i] == '\n') {
 			lineCtr++;
@@ -51,13 +58,7 @@ int main() {
 		if (strncmp(&buffer[i], input, inputLen) == 0 && (buffer[i + inputLen] == ' ' || buffer[i + inputLen] == '\0')) {
 			sWordCtr++;
 		}
-		if (buffer[i] == '.') {
-			punctCtr++;
-			if (isupper(buffer[i + 2]) && buffer[i + 1] == ' ') {
-				sentenceCtr++;
-			}
-
-		}
+	
 	}
 	
 	
