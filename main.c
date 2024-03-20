@@ -1,17 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
+
 #define BUFFER_SIZE 512
+
+const char* turkish_characters = "çÇþÞÝöÖðÐüÜý";
+
+int isTurkishChar(char c) {
+	for (int i = 0; turkish_characters[i] != '\0'; i++) {
+		if (c == turkish_characters[i]) {
+			return 1;
+		}
+		return 0;
+	}
+}
 
 int main() {
 	FILE* file;
 	char c;
 	char *input;
-	int i = 0;
 	char* filename = "test.txt";
 	int wordCtr = 0, punctCtr = 0, lineCtr = 1,sentenceCtr = 0 ;
 	int sWordCtr = 0;
 	int inputLen = 0;
-
 
 	input = (char*)malloc(sizeof(char)* 101);
 	printf("Enter a string that you want to search:");
@@ -20,7 +30,6 @@ int main() {
 	inputLen = strlen(input);
 
 	input = (char*)realloc(input, inputLen * sizeof(char));
-	
 
 	if (fopen_s(&file, filename, "r") != 0) {
 		printf("Error opening file\n");
@@ -39,18 +48,17 @@ int main() {
 	buffer[length] = '\0';
 
 	for (int i =0; i< length + 1 ; i++) {
+		if (isTurkishChar(buffer[i])) continue; // Türkçe karaktere denk gelirse diðer iflere girmeden -> next iteration
 
-		if (buffer[i] == ' ' || buffer[i] == '\0') {
+		if (buffer[i] == ' ' || buffer[i] == '\0' ) {
 			wordCtr++;
 		}
 		if (ispunct(buffer[i])) {
-			if (buffer[i] == '.' && (isupper(buffer[i + 2]) || buffer[i + 1] == '\0')) {
+			punctCtr++;
+			if (buffer[i] == '.' && (isupper(buffer[i + 2]))) {
 				sentenceCtr++;
 			}
-			punctCtr++;
 		}
-			
-
 		if (buffer[i] == '\n') {
 			lineCtr++;
 			wordCtr++;
@@ -60,7 +68,6 @@ int main() {
 		}
 	
 	}
-	
 	
 	printf("Word Count: %d \n", wordCtr);
 	printf("Punctuation Count: %d\n", punctCtr);
