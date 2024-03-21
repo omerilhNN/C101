@@ -25,11 +25,9 @@ int main() {
 
 	input = (char*)malloc(sizeof(char)* 101);
 	printf("Enter a string that you want to search:");
-	fgets(input, sizeof(input), stdin);
+	fgets(input, 101, stdin);
 	input[strcspn(input, "\n")] = '\0';
 	inputLen = strlen(input);
-
-	input = (char*)realloc(input, inputLen * sizeof(char));
 
 	if (fopen_s(&file, filename, "r") != 0) {
 		printf("Error opening file\n");
@@ -39,34 +37,49 @@ int main() {
 	int length = ftell(file);
 	fseek(file, 0, SEEK_SET);
 
-	char* buffer = (char*)malloc(sizeof(char) * (length + 2)); //sentenceCtr -> buffer[i+2]kontrolü için +3
+	char* buffer = (char*)malloc(sizeof(char) * (length)); //sentenceCtr -> buffer[i+2]kontrolü için +3
 	if (buffer == NULL) {
 		printf("Memory allocation failed\n");
 		return -1;
 	}
-	fread(buffer, sizeof(char), length+2, file);
-	buffer[length] = '\0';
+	//Buffer'ý dosyadaki charlardan oku
+	int k = 0;
+	while ((c = fgetc(file)) != EOF) {
+		buffer[k] = c;
+		k++;
+	}
+	buffer[k] = '\0';
 
-	for (int i =0; i< length + 1 ; i++) {
-		if (isTurkishChar(buffer[i])) continue; // Türkçe karaktere denk gelirse diðer iflere girmeden -> next iteration
-
-		if (buffer[i] == ' ' || buffer[i] == '\0' ) {
+	for (int i =0; i< length && buffer[i] != '\0'; i++) {
+		if (isTurkishChar(buffer[i])) {
+			//Turkce karakter iceren kelimeyi pas gececek
+			while (buffer[i] != ' ' && buffer[i] != '\0') {
+				i++;
+			}
+			continue;
+		}
+		else if (buffer[i] == ' ') {
 			wordCtr++;
 		}
-		if (ispunct(buffer[i])) {
+		else if (ispunct(buffer[i])) {
 			punctCtr++;
-			if (buffer[i] == '.' && (isupper(buffer[i + 2]))) {
-				sentenceCtr++;
-			}
+			
 		}
-		if (buffer[i] == '\n') {
+		else if (buffer[i] == '\n') {
 			lineCtr++;
 			wordCtr++;
 		}
-		if (strncmp(&buffer[i], input, inputLen) == 0 && (buffer[i + inputLen] == ' ' || buffer[i + inputLen] == '\0')) {
-			sWordCtr++;
+		else if (i>= 2 && buffer[i - 2] == '.' && isupper(buffer[i])) {
+			sentenceCtr++;
 		}
-	
+		else if (i == 0 && isupper(buffer[i])) {
+			sentenceCtr++;
+
+		}
+
+		if (strncmp(&buffer[i], input, inputLen) == 0 && (buffer[i + inputLen] == ' ' || buffer[i + inputLen] == '.' || buffer[i + inputLen] == '\0' || buffer[i + inputLen] == '\n')) {
+			sWordCtr++;
+		} 
 	}
 	
 	printf("Word Count: %d \n", wordCtr);
