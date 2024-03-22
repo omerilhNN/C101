@@ -49,6 +49,15 @@ int main() {
 		k++;
 	}
 	buffer[k] = '\0';
+	//cümleleri tutmak için ve her cümlenin elemanlarýna ayrý ayrý eriþmek için **sentences
+	char** sentences = (char**)malloc(sizeof(char*));
+	if (sentences == NULL)
+	{
+		printf("Memory allocation failed for sentences\n");
+		return -1;
+	}
+	
+	char* sentence = strtok(buffer, "."); // buffer'ýn baþlangýç adresinden baþlayarak ilerle
 
 	for (int i =0; i< length && buffer[i] != '\0'; i++) {
 		if (isTurkishChar(buffer[i])) {
@@ -58,7 +67,7 @@ int main() {
 			}
 			continue;
 		}
-		else if (buffer[i] == ' ') {
+		else if ((i >=2 && (buffer[i-1] == ' '  && ispunct(buffer[i-2]))) || buffer[i] == ' ') {
 			wordCtr++;
 		}
 		else if (ispunct(buffer[i])) {
@@ -72,10 +81,17 @@ int main() {
 		else if (i>= 2 && buffer[i - 2] == '.' && isupper(buffer[i])) {
 			sentenceCtr++;
 		}
-		else if (i == 0 && isupper(buffer[i])) {
-			sentenceCtr++;
-
+		else if (feof(file)){
+			printf("End of file");
 		}
+		/*else if (i == length - 1 ) {
+			for (i; isupper(buffer[i]) && buffer[length-1] == '.'; i--) {
+				if (buffer[i - 1] == ' ' || buffer[i - 1] == '\n') break;
+			}
+			sentenceCtr++;
+			break;
+		}*/
+		
 
 		if (strncmp(&buffer[i], input, inputLen) == 0 && (buffer[i + inputLen] == ' ' || buffer[i + inputLen] == '.' || buffer[i + inputLen] == '\0' || buffer[i + inputLen] == '\n')) {
 			sWordCtr++;
