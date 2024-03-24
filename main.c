@@ -63,15 +63,9 @@ int main() {
 	char* context = NULL;
 	char* token = strtok_s(temp_buffer, ".!?", &context);
 	int sentenceIndex = 0;
-	// Omer faruk\0 faruk ilhan 
 	while (token != NULL && sentenceIndex < BUFFER_SIZE) {
-	
-
-		// Eðer cümlenin baþýndaki karakter büyük harfse, cümleyi al
-		if (*token != '\0' && 
-			(
-				(*token == '\n' || isspace(*token)
-			)) && isupper(*(token+1)) ) {
+		// 1. durum: (\0 ile baþlama + new line ya da boþluk + 1.indeksteki eleman büyük mü deðil mi)  2.durum: ilk cümle için büyük harfle baþlýyor mu kontrolü
+		if ((*token != '\0' && ((*token == '\n' || isspace(*token))) && isupper(*(token+1))) || (sentenceIndex ==0 && isupper(*token)) ) {
 			sentences[sentenceIndex] = (char*)malloc(strlen(token) + 1);
 			if (sentences[sentenceIndex] == NULL) {
 				printf("Memory allocation failed for sentence\n");
@@ -80,8 +74,7 @@ int main() {
 			strcpy_s(sentences[sentenceIndex], strlen(token) + 1, token);
 			sentenceIndex++;
 		}
-		token = strtok_s(NULL, ".!?", &context);
-		
+		token = strtok_s(NULL, ".!?", &context);//iterate next sentence
 	}
 	sentenceCtr = sentenceIndex;
 
@@ -93,7 +86,6 @@ int main() {
 			}
 			continue;
 		}
-		
 		// Boþluklarý, noktalama iþaretlerini ve yeni satýrlarý kontrol et
 		if (isspace(buffer[i]) || ispunct(buffer[i]) || buffer[i] == '\n') {
 			if (i> 0 && !isspace(buffer[i - 1]) && !ispunct(buffer[i - 1])) {
@@ -109,11 +101,12 @@ int main() {
 			sWordCtr++;
 		} 
 		if (i == length - 1) {
+			//son karakter eðer harf ise
 			if (!isspace(buffer[i]) && !ispunct(buffer[i])) {
 				wordCtr++;
 			}
 
-			// Son karakterin noktalama iþareti olup olmadýðýný kontrol et
+			// Son karakter noktalama ise
 			if (ispunct(buffer[i])) {
 				punctCtr++;
 			}
@@ -123,7 +116,7 @@ int main() {
 	}
 	
 	
-	printf("Word Count: %d \n", wordCtr+1);
+	printf("Word Count: %d \n", wordCtr);
 	printf("Punctuation Count: %d\n", punctCtr);
 	printf("Line count: %d\n", lineCtr +1 );
 	printf("Searched word count:%d\n", sWordCtr);
