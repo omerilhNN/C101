@@ -11,8 +11,8 @@ int isTurkishChar(char c) {
 		if (c == turkish_characters[i]) {
 			return 1;
 		}
-		return 0;
 	}
+	return 0;
 }
 
 int main() {
@@ -46,8 +46,12 @@ int main() {
 	int k = 0;
 	while ((c = fgetc(file)) != EOF && k < length) {
 		buffer[k++] = c;
+		if (c == '\n') {
+			lineCtr++;
+		}
 	}
 	buffer[k] = '\0'; // Son char null-terminated
+	char* temp_buffer = strdup(buffer); //Temp -> strtok_s() buffer'ýn orjinal deðerine etki ediyordu for döngüsünü bozuyordu
 
 	
 	char** sentences = (char**)malloc(sizeof(char*) * BUFFER_SIZE);
@@ -57,52 +61,76 @@ int main() {
 	}
 
 	char* context = NULL;
-	char* token = strtok_s(buffer, ".", &context);
+	char* token = strtok_s(temp_buffer, ".!?", &context);
 	int sentenceIndex = 0;
-
+	// Omer faruk\0 faruk ilhan 
 	while (token != NULL && sentenceIndex < BUFFER_SIZE) {
-		sentences[sentenceIndex] = (char*)malloc(strlen(token) + 1);
-		if (sentences[sentenceIndex] == NULL) {
-			printf("Memory allocation failed for sentence\n");
-			return -1;
+	
+
+		// Eðer cümlenin baþýndaki karakter büyük harfse, cümleyi al
+		if (*token != '\0' && 
+			(
+				(*token == '\n' || isspace(*token)
+			)) && isupper(*(token+1)) ) {
+			sentences[sentenceIndex] = (char*)malloc(strlen(token) + 1);
+			if (sentences[sentenceIndex] == NULL) {
+				printf("Memory allocation failed for sentence\n");
+				return -1;
+			}
+			strcpy_s(sentences[sentenceIndex], strlen(token) + 1, token);
+			sentenceIndex++;
 		}
-		strcpy_s(sentences[sentenceIndex], strlen(token) + 1, token);
-		sentenceIndex++;
-		token = strtok_s(NULL, ".", &context);
+		token = strtok_s(NULL, ".!?", &context);
+		
 	}
-	// Count sentences
 	sentenceCtr = sentenceIndex;
 
 	for (int i =0; i< length && buffer[i] != '\0'; i++) {
+		//Turkce karakter iceren kelimeyi pas gececek
 		if (isTurkishChar(buffer[i])) {
-			//Turkce karakter iceren kelimeyi pas gececek
 			while (buffer[i] != ' ' && buffer[i] != '\0') {
 				i++;
 			}
 			continue;
 		}
-		else if ((i >=2 && (buffer[i-1] == ' '  && ispunct(buffer[i-2]))) || buffer[i] == ' ') {
-			wordCtr++;
+		
+		// Boþluklarý, noktalama iþaretlerini ve yeni satýrlarý kontrol et
+		if (isspace(buffer[i]) || ispunct(buffer[i]) || buffer[i] == '\n') {
+			if (i> 0 && !isspace(buffer[i - 1]) && !ispunct(buffer[i - 1])) {
+				wordCtr++; // Kelime sayýsýný artýr
+			}
+			if (ispunct(buffer[i])) {
+				punctCtr++; // Noktalama iþareti sayýsýný artýr
+			}
 		}
-		else if (ispunct(buffer[i])) {
-			punctCtr++;
-			
-		}
-		else if (buffer[i] == '\n') {
-			lineCtr++;
-			wordCtr++;
-		}
-		if (strncmp(&buffer[i], input, inputLen) == 0 && (buffer[i + inputLen] == ' ' || buffer[i + inputLen] == '.' || buffer[i + inputLen] == '\0' || buffer[i + inputLen] == '\n')) {
+		
+
+		if (strncmp(&buffer[i], input, inputLen) == 0 && (buffer[i + inputLen] == ' ' || ispunct(buffer[i + inputLen]) || buffer[i + inputLen] == '\0' || buffer[i + inputLen] == '\n')) {
 			sWordCtr++;
 		} 
+		if (i == length - 1) {
+			if (!isspace(buffer[i]) && !ispunct(buffer[i])) {
+				wordCtr++;
+			}
+
+			// Son karakterin noktalama iþareti olup olmadýðýný kontrol et
+			if (ispunct(buffer[i])) {
+				punctCtr++;
+			}
+
+		}
+		
 	}
 	
-	printf("Word Count: %d \n", wordCtr);
+	
+	printf("Word Count: %d \n", wordCtr+1);
 	printf("Punctuation Count: %d\n", punctCtr);
 	printf("Line count: %d\n", lineCtr +1 );
 	printf("Searched word count:%d\n", sWordCtr);
 	printf("Sentence count: %d\n", sentenceCtr);
+
 	fclose(file);
 	free(input);
 	free(buffer);
+	free(temp_buffer);
 }
