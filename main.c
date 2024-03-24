@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define BUFFER_SIZE 512
 
@@ -19,9 +20,7 @@ int main() {
 	char c;
 	char *input;
 	char* filename = "test.txt";
-	int wordCtr = 0, punctCtr = 0, lineCtr = 1,sentenceCtr = 0 ;
-	int sWordCtr = 0;
-	int inputLen = 0;
+	int wordCtr = 0, punctCtr = 0, lineCtr = 0, sentenceCtr = 0, sWordCtr = 0, inputLen = 0;
 
 	input = (char*)malloc(sizeof(char)* 101);
 	printf("Enter a string that you want to search:");
@@ -37,49 +36,42 @@ int main() {
 	int length = ftell(file);
 	fseek(file, 0, SEEK_SET);
 
-	char* buffer = (char*)malloc(sizeof(char) * (length)); //sentenceCtr -> buffer[i+2]kontrolü için +3
+	//file'ý tutmak için buffer
+	char* buffer = (char*)malloc(sizeof(char) * (length +1 )); 
 	if (buffer == NULL) {
 		printf("Memory allocation failed\n");
 		return -1;
 	}
 	//Buffer'ý dosyadaki charlardan oku
 	int k = 0;
-	while ((c = fgetc(file)) != EOF) {
-		buffer[k] = c;
-		k++;
+	while ((c = fgetc(file)) != EOF && k < length) {
+		buffer[k++] = c;
 	}
-	buffer[k] = '\0';
-	//cümleleri tutmak için ve her cümlenin elemanlarýna ayrý ayrý eriþmek için **sentences
-	char** sentences = (char**)malloc( sizeof(char*) * BUFFER_SIZE);
-	int sentenceIndex = 0;
+	buffer[k] = '\0'; // Son char null-terminated
 
-	if (sentences == NULL)
-	{
+	
+	char** sentences = (char**)malloc(sizeof(char*) * BUFFER_SIZE);
+	if (sentences == NULL) {
 		printf("Memory allocation failed for sentences\n");
 		return -1;
 	}
-	
-	char* token = strtok_s(buffer, '.' ,&buffer); // buffer'ýn baþlangýç adresinden baþlayarak ilerle
-	printf("TOKEN NULL");
-	while (token != NULL) {
+
+	char* context = NULL;
+	char* token = strtok_s(buffer, ".", &context);
+	int sentenceIndex = 0;
+
+	while (token != NULL && sentenceIndex < BUFFER_SIZE) {
 		sentences[sentenceIndex] = (char*)malloc(strlen(token) + 1);
 		if (sentences[sentenceIndex] == NULL) {
 			printf("Memory allocation failed for sentence\n");
 			return -1;
 		}
-		strcpy(sentences[sentenceIndex], token);
+		strcpy_s(sentences[sentenceIndex], strlen(token) + 1, token);
 		sentenceIndex++;
-		printf("a");
-		token = strtok_s(NULL, '.', &buffer);
+		token = strtok_s(NULL, ".", &context);
 	}
-
-		for (int i = 0; i < sentenceIndex; i++) {
-			if (sentences[i] != NULL && isupper(sentences[i][0]) && sentences[i][strlen(sentences[i]) - 1] == '.') {
-				sentenceCtr++;
-			}
-		}
-	
-
+	// Count sentences
+	sentenceCtr = sentenceIndex;
 
 	for (int i =0; i< length && buffer[i] != '\0'; i++) {
 		if (isTurkishChar(buffer[i])) {
@@ -100,21 +92,6 @@ int main() {
 			lineCtr++;
 			wordCtr++;
 		}
-		else if (i>= 2 && buffer[i - 2] == '.' && isupper(buffer[i])) {
-			//sentenceCtr++;
-		}
-		else if (feof(file)){
-			printf("End of file");
-		}
-		/*else if (i == length - 1 ) {
-			for (i; isupper(buffer[i]) && buffer[length-1] == '.'; i--) {
-				if (buffer[i - 1] == ' ' || buffer[i - 1] == '\n') break;
-			}
-			sentenceCtr++;
-			break;
-		}*/
-		
-
 		if (strncmp(&buffer[i], input, inputLen) == 0 && (buffer[i + inputLen] == ' ' || buffer[i + inputLen] == '.' || buffer[i + inputLen] == '\0' || buffer[i + inputLen] == '\n')) {
 			sWordCtr++;
 		} 
@@ -122,7 +99,7 @@ int main() {
 	
 	printf("Word Count: %d \n", wordCtr);
 	printf("Punctuation Count: %d\n", punctCtr);
-	printf("Line count: %d\n", lineCtr);
+	printf("Line count: %d\n", lineCtr +1 );
 	printf("Searched word count:%d\n", sWordCtr);
 	printf("Sentence count: %d\n", sentenceCtr);
 	fclose(file);
